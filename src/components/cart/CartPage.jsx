@@ -45,7 +45,7 @@ export default function CartPage({ currentUser }) {
     return (
         <div>
             <h2>My Cart</h2>
-            <p>Logged in as <strong>{currentUser.name}</strong> ({currentUser.role === 2 ? 'admin' : 'normal'})</p>
+            <p>Logged in as <strong>{currentUser.name}</strong> ({currentUser.role === 2 || currentUser.role?.toLowerCase?.() === 'admin' ? 'admin' : 'normal'})</p>
             {cartItems.length === 0 ? (
                 <p>Your cart is empty.</p>
             ) : (

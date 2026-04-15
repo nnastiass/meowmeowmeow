@@ -21,6 +21,10 @@ export default function ItemPage({ currentUser }) {
     const [cartItemIds, setCartItemIds] = useState([]);
 
     useEffect(() => {
+        console.log('Current user:', currentUser);
+    }, [currentUser]);
+
+    useEffect(() => {
         const fetchItems = async () => {
             try {
                 const fetchedItems = await getItems();
@@ -99,7 +103,7 @@ export default function ItemPage({ currentUser }) {
     };
 
     const handleCreateItem = async (itemData) => {
-        if (!currentUser || currentUser.role !== 2) {
+        if (!currentUser || currentUser.role !== 2 && currentUser.role?.toLowerCase() !== 'admin') {
             setError('Only admin users can create items.');
             return;
         }
@@ -120,13 +124,13 @@ export default function ItemPage({ currentUser }) {
             <h2>Items</h2>
             {currentUser ? (
                 <p>
-                    Logged in as <strong>{currentUser.name}</strong> ({currentUser.role === 2 ? 'admin' : 'normal'})
+                    Logged in as <strong>{currentUser.name}</strong> ({currentUser.role === 2 || currentUser.role?.toLowerCase?.() === 'admin' ? 'admin' : 'normal'})
                 </p>
             ) : (
                 <p>Please log in to see item creation controls.</p>
             )}
 
-            {currentUser?.role === 2 ? (
+            {(currentUser?.role === 2 || currentUser?.role?.toLowerCase?.() === 'admin') ? (
                 <div>
                     <h3>Create Item</h3>
                     <ItemForm onCreate={handleCreateItem} />

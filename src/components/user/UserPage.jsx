@@ -55,7 +55,7 @@ export default function UserPage({ currentUser, onLogin, onLogout, onUserCreated
                 {currentUser ? (
                     <div>
                         <p>
-                            Logged in as <strong>{currentUser.name}</strong> ({String(currentUser.role).toLowerCase() === 'admin' ? 'admin' : 'customer'})
+                            Logged in as <strong>{currentUser.name}</strong> ({currentUser.role === 2 || String(currentUser.role).toLowerCase() === 'admin' ? 'admin' : 'customer'})
                         </p>
                         <button onClick={onLogout}>Logout</button>
                     </div>
