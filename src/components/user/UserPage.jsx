@@ -30,7 +30,9 @@ export default function UserPage({ currentUser, onLogin, onLogout, onUserCreated
         try {
             const result = await loginUser(loginEmail.trim(), loginPassword);
             const normalizedUser = {
-                name: result.name,
+                name: result.name || `${result.firstName || ''} ${result.lastName || ''}`.trim() || loginEmail.trim(),
+                firstName: result.firstName,
+                lastName: result.lastName,
                 email: loginEmail.trim(),
                 role: result.role,
                 publicId: result.publicId,

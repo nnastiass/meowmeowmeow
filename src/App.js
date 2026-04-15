@@ -8,7 +8,9 @@ import { getCurrentUser, logoutUser as logoutUserApi } from './api/userAPI';
 
 const normalizeUser = (user) => ({
   id: user.id || user.publicId || user.PublicId || null,
-  name: user.name || user.Name || user.email || '',
+  name: user.name || user.Name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || '',
+  firstName: user.firstName || user.FirstName || null,
+  lastName: user.lastName || user.LastName || null,
   email: user.email || user.Email || '',
   role: user.role ?? user.Role ?? 1,
   publicId: user.publicId || user.PublicId || null,

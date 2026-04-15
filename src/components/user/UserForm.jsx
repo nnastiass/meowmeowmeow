@@ -2,9 +2,12 @@ import { registerUser, loginUser } from "../../api/userAPI";
 import { useState } from 'react';
 
 export default function UserForm({ onUserCreated }) {
-    const [name, setName] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [address, setAddress] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
     const [dateOfBirth, setDateOfBirth] = useState('2000-01-01');
     const [status, setStatus] = useState(null);
     const [error, setError] = useState(null);
@@ -14,15 +17,19 @@ export default function UserForm({ onUserCreated }) {
         setStatus(null);
         setError(null);
 
-        if (!name.trim() || !email.trim() || !password.trim()) {
-            setError('Name, email, and password are required.');
+        if (!firstName.trim() || !lastName.trim() || !email.trim() || !password.trim() || !address.trim() || !phoneNumber.trim()) {
+            setError('First name, last name, email, password, address, and phone number are required.');
             return;
         }
 
         const newUser = {
-            name: name.trim(),
+            name: `${firstName.trim()} ${lastName.trim()}`.trim(),
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
             email: email.trim(),
             password: password.trim(),
+            address: address.trim(),
+            phoneNumber: phoneNumber.trim(),
             dateOfBirth,
         };
 
@@ -30,12 +37,17 @@ export default function UserForm({ onUserCreated }) {
             await registerUser(newUser);
             const loginResult = await loginUser(newUser.email, newUser.password);
             setStatus('User created and logged in.');
-            setName('');
+            setFirstName('');
+            setLastName('');
             setEmail('');
             setPassword('');
+            setAddress('');
+            setPhoneNumber('');
             setDateOfBirth('2000-01-01');
             onUserCreated?.({
-                name: loginResult.name,
+                name: loginResult.name || `${loginResult.firstName || newUser.firstName} ${loginResult.lastName || newUser.lastName}`,
+                firstName: loginResult.firstName || newUser.firstName,
+                lastName: loginResult.lastName || newUser.lastName,
                 email: newUser.email,
                 role: loginResult.role,
                 publicId: loginResult.publicId,
@@ -50,11 +62,21 @@ export default function UserForm({ onUserCreated }) {
         <form onSubmit={handleSubmit}>
             <div>
                 <label>
-                    Name:
+                    First Name:
                     <input
                         type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                    />
+                </label>
+            </div>
+            <div>
+                <label>
+                    Last Name:
+                    <input
+                        type="text"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
                     />
                 </label>
             </div>
@@ -75,6 +97,26 @@ export default function UserForm({ onUserCreated }) {
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                    />
+                </label>
+            </div>
+            <div>
+                <label>
+                    Address:
+                    <input
+                        type="text"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                    />
+                </label>
+            </div>
+            <div>
+                <label>
+                    Phone Number:
+                    <input
+                        type="tel"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
                     />
                 </label>
             </div>
