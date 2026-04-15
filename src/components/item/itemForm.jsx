@@ -1,17 +1,20 @@
 import { useState } from 'react';
 
-export default function ItemForm({ onCreate }) {
+export default function ItemForm({ onCreate, categories = [] }) {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [categoryName, setCategoryName] = useState('');
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!title.trim() || !description.trim()) {
+        
+        if (!title.trim() || !description.trim() || !categoryName.trim()) {
             return;
         }
-        onCreate({ title: title.trim(), description: description.trim() });
+        onCreate({ title: title.trim(), description: description.trim(), categoryName: categoryName.trim() });
         setTitle('');
         setDescription('');
+        setCategoryName('');
     };
 
     return (
@@ -36,7 +39,24 @@ export default function ItemForm({ onCreate }) {
                     />
                 </label>
             </div>
+            <div>
+                <label>
+                    Category:
+                    <select
+                        value={categoryName}
+                        onChange={(e) => setCategoryName(e.target.value)}
+                    >
+                        <option value="">-- Select a Category --</option>
+                        {categories.map((cat, idx) => (
+                            <option key={cat.publicId ?? cat.PublicId ?? idx} value={cat.name ?? cat.Name}>
+                                {cat.name ?? cat.Name}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+            </div>
             <button type="submit">Create Item</button>
         </form>
     );
 }
+

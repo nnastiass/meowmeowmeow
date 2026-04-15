@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import ItemForm from './ItemForm';
+import CategoryForm from './CategoryForm';
 import { getFavourites, toggleFavourite as toggleFavouriteAPI } from '../../api/favouriteAPI';
 import { getCart, addToCart as addToCartAPI } from '../../api/cartAPI';
 import { getItems, postItem } from '../../api/itemAPI';
+import { getCategories, createCategory as createCategoryAPI, deleteCategory as deleteCategoryAPI } from '../../api/categoryAPI';
 
 const normalizeItem = (item) => ({
     id: item.id || item.publicId || item.PublicId || item.itemPublicId || item.ItemPublicId || null,
@@ -16,6 +18,7 @@ const extractItemId = (item) => item?.id || item?.publicId || item?.PublicId || 
 
 export default function ItemPage({ currentUser }) {
     const [items, setItems] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [error, setError] = useState(null);
     const [favouriteIds, setFavouriteIds] = useState([]);
     const [cartItemIds, setCartItemIds] = useState([]);
@@ -23,6 +26,20 @@ export default function ItemPage({ currentUser }) {
     useEffect(() => {
         console.log('Current user:', currentUser);
     }, [currentUser]);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const fetchedCategories = await getCategories();
+                setCategories(Array.isArray(fetchedCategories) ? fetchedCategories : []);
+            } catch (fetchError) {
+                console.error(fetchError);
+                console.warn('Could not load categories');
+            }
+        };
+
+        fetchCategories();
+    }, []);
 
     useEffect(() => {
         const fetchItems = async () => {
@@ -103,19 +120,41 @@ export default function ItemPage({ currentUser }) {
     };
 
     const handleCreateItem = async (itemData) => {
-        if (!currentUser || currentUser.role !== 2 && currentUser.role?.toLowerCase() !== 'admin') {
+        if (!currentUser || (currentUser.role !== 2 && currentUser.role?.toLowerCase() !== 'admin')) {
             setError('Only admin users can create items.');
             return;
         }
 
         try {
             setError(null);
-            await postItem({ name: itemData.title, description: itemData.description });
+            await postItem({ name: itemData.title, description: itemData.description, categoryName: itemData.categoryName });
             const fetchedItems = await getItems();
             setItems(Array.isArray(fetchedItems) ? fetchedItems.map(normalizeItem) : []);
         } catch (fetchError) {
             console.error(fetchError);
             setError('Failed to create item.');
+        }
+    };
+
+    const handleCreateCategory = async (categoryData) => {
+        try {
+            await createCategoryAPI(categoryData);
+            const fetchedCategories = await getCategories();
+            setCategories(Array.isArray(fetchedCategories) ? fetchedCategories : []);
+        } catch (categoryError) {
+            console.error(categoryError);
+            setError('Failed to create category.');
+        }
+    };
+
+    const handleDeleteCategory = async (categoryId) => {
+        try {
+            await deleteCategoryAPI(categoryId);
+            const fetchedCategories = await getCategories();
+            setCategories(Array.isArray(fetchedCategories) ? fetchedCategories : []);
+        } catch (categoryError) {
+            console.error(categoryError);
+            setError('Failed to delete category.');
         }
     };
 
@@ -132,8 +171,29 @@ export default function ItemPage({ currentUser }) {
 
             {(currentUser?.role === 2 || currentUser?.role?.toLowerCase?.() === 'admin') ? (
                 <div>
+                    <h3>Manage Categories</h3>
+                    <CategoryForm onCreate={handleCreateCategory} />
+                    {categories.length > 0 && (
+                        <div>
+                            <h4>Existing Categories</h4>
+                            <ul>
+                                {categories.map((cat, idx) => (
+                                    <li key={cat.publicId ?? cat.PublicId ?? idx}>
+                                        <strong>{cat.name ?? cat.Name}</strong> — {cat.description ?? cat.Description}
+                                        <button
+                                            onClick={() => handleDeleteCategory(cat.publicId ?? cat.PublicId)}
+                                            style={{ marginLeft: '0.5rem' }}
+                                        >
+                                            Delete
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
                     <h3>Create Item</h3>
-                    <ItemForm onCreate={handleCreateItem} />
+                    <ItemForm onCreate={handleCreateItem} categories={categories} />
                     {error && <p style={{ color: 'red' }}>{error}</p>}
                 </div>
             ) : (
