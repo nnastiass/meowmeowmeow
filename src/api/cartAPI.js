@@ -11,23 +11,30 @@ export async function getCart() {
 }
 
 export async function addToCart(itemId) {
-    const res = await fetch(`${API_BASE}/${itemId}`, {
+
+    const res = await fetch(`${API_BASE}/add?itemId=${itemId}`, {
         method: 'POST',
         credentials: 'include',
     });
+    
     if (!res.ok) {
         throw new Error('Failed to add item to cart');
     }
-    return await res.text();
+    
+    // Using res.json() here because your C# Add method returns Ok(result) which is a JSON object!
+    return await res.json(); 
 }
 
 export async function removeFromCart(itemId) {
-    const res = await fetch(`${API_BASE}/${itemId}`, {
+
+    const res = await fetch(`${API_BASE}/remove/${itemId}`, {
         method: 'DELETE',
         credentials: 'include',
     });
+    
     if (!res.ok) {
         throw new Error('Failed to remove item from cart');
     }
+    
     return await res.text();
 }

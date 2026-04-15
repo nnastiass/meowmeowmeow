@@ -4,6 +4,7 @@ import UserPage from './components/user/UserPage';
 import ItemPage from './components/item/ItemPage';
 import FavouritePage from './components/favourite/FavouritePage';
 import CartPage from './components/cart/CartPage';
+import OrderPage from './components/order/OrderPage';
 import { getCurrentUser, logoutUser as logoutUserApi } from './api/userAPI';
 
 const normalizeRole = (role) => {
@@ -107,6 +108,14 @@ function App() {
         >
           Cart
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('orders')}
+          disabled={activeTab === 'orders'}
+          style={{ marginLeft: '1rem' }}
+        >
+          Orders
+        </button>
       </div>
 
       {activeTab === 'users' ? (
@@ -115,8 +124,10 @@ function App() {
         <ItemPage currentUser={currentUser} />
       ) : activeTab === 'favourites' ? (
         <FavouritePage currentUser={currentUser} />
-      ) : (
+      ) : activeTab === 'cart' ? (
         <CartPage currentUser={currentUser} />
+      ) : (
+        <OrderPage currentUser={currentUser} />
       )}
     </div>
   );

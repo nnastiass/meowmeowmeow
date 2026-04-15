@@ -120,21 +120,24 @@ export default function ItemPage({ currentUser }) {
     };
 
     const handleCreateItem = async (itemData) => {
-        if (!currentUser || (currentUser.role !== 2 && currentUser.role?.toLowerCase() !== 'admin')) {
-            setError('Only admin users can create items.');
-            return;
-        }
+    if (!currentUser || (currentUser.role !== 2 && currentUser.role?.toLowerCase() !== 'admin')) {
+        setError('Only admin users can create items.');
+        return;
+    }
 
-        try {
-            setError(null);
-            await postItem({ name: itemData.title, description: itemData.description, categoryName: itemData.categoryName });
-            const fetchedItems = await getItems();
-            setItems(Array.isArray(fetchedItems) ? fetchedItems.map(normalizeItem) : []);
-        } catch (fetchError) {
-            console.error(fetchError);
-            setError('Failed to create item.');
-        }
-    };
+    try {
+        setError(null);
+        
+        // FIX IS HERE: Just pass the data directly! 
+        await postItem(itemData); 
+        
+        const fetchedItems = await getItems();
+        setItems(Array.isArray(fetchedItems) ? fetchedItems.map(normalizeItem) : []);
+    } catch (fetchError) {
+        console.error(fetchError);
+        setError('Failed to create item.');
+    }
+};
 
     const handleCreateCategory = async (categoryData) => {
         try {

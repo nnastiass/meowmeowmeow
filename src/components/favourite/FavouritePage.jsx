@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import { getFavourites, toggleFavourite as toggleFavouriteAPI } from '../../api/favouriteAPI';
 
+// FIXED: Prioritize ItemPublicId and added ItemPrice to match the C# DTO
 const normalizeFavouriteItem = (item) => ({
-    id: item.id || item.publicId || item.PublicId || item.itemPublicId || item.ItemPublicId || null,
-    title: item.title || item.name || item.Name || item.itemName || item.ItemName || 'Untitled',
-    description: item.description || item.Description || '',
+    // We strictly want the ITEM's ID for the toggle function to work
+    id: item.itemPublicId || item.ItemPublicId || item.publicId || item.PublicId || null,
+    title: item.itemName || item.ItemName || item.title || item.name || 'Untitled',
+    // Description doesn't exist on FavouriteDTO, but Price does!
+    price: item.itemPrice || item.ItemPrice || 0, 
 });
 
 export default function FavouritePage({ currentUser }) {
@@ -63,7 +66,9 @@ export default function FavouritePage({ currentUser }) {
                 <ul>
                     {favourites.map((item, idx) => (
                         <li key={item.id ?? `${item.title}-${idx}`}>
-                            <strong>{item.title}</strong> — {item.description}
+                            {/* Replaced description with price to match the DTO */}
+                            <strong>{item.title}</strong> — ${item.price.toFixed(2)}
+                            
                             <button style={{ marginLeft: '0.5rem' }} onClick={() => removeFavourite(item.id)}>
                                 Remove
                             </button>
