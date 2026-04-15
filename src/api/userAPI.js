@@ -1,31 +1,51 @@
-const API_BASE = 'https://localhost:7278/api/user';
+const API_BASE = 'https://localhost:7278/api';
+
+async function userFetch(path, options = {}) {
+    const res = await fetch(`${API_BASE}${path}`, {
+        method: options.method ?? 'GET',
+        credentials: 'include',
+        headers: {
+            ...(options.headers || {}),
+            'Content-Type': options.json === false ? undefined : 'application/json',
+        },
+        body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+
+    const text = await res.text();
+    let data;
+    try {
+        data = text ? JSON.parse(text) : null;
+    } catch {
+        data = text;
+    }
+
+    if (!res.ok) {
+        throw new Error(data?.message || res.statusText || 'User API request failed');
+    }
+
+    return data;
+}
 
 export async function getUsers() {
-    const res = await fetch(API_BASE);
-    if (!res.ok) {
-        throw new Error('Failed to fetch users');
-    }
-    return await res.json();
-
+    return userFetch('/user');
 }
 
 export async function getUser(id) {
-    const res = await fetch(`${API_BASE}/${id}`);
-    if (!res.ok) {
-        throw new Error(`Failed to fetch user with id ${id}`);
-    }
-    return await res.json();}
+    return userFetch(`/user/${id}`);
+}
 
-export async function postUser(userData) {
-    const res = await fetch(API_BASE, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-    });
-    if (!res.ok) {
-        throw new Error('Failed to create user');
-    }
-    return await res.json();
+export async function registerUser(userData) {
+    return userFetch('/user/register', { method: 'POST', body: userData });
+}
+
+export async function loginUser(email, password) {
+    return userFetch('/user/login', { method: 'POST', body: { email, password } });
+}
+
+export async function logoutUser() {
+    return userFetch('/user/logout', { method: 'POST' });
+}
+
+export async function getCurrentUser() {
+    return userFetch('/user/me');
 }

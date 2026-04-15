@@ -3,24 +3,19 @@ import { useState } from 'react';
 export default function ItemForm({ onCreate }) {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
-    const [error, setError] = useState(null);
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        setError(null);
-
         if (!title.trim() || !description.trim()) {
-            setError('Title and description are required.');
             return;
         }
-
         onCreate({ title: title.trim(), description: description.trim() });
         setTitle('');
         setDescription('');
     };
 
     return (
-        <form onSubmit={handleSubmit} style={{ marginBottom: '1rem' }}>
+        <form onSubmit={handleSubmit}>
             <div>
                 <label>
                     Title:
@@ -42,7 +37,6 @@ export default function ItemForm({ onCreate }) {
                 </label>
             </div>
             <button type="submit">Create Item</button>
-            {error && <p style={{ color: 'red' }}>{error}</p>}
         </form>
     );
 }

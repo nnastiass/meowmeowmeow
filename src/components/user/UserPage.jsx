@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import UserForm from "./UserForm";
-import { getUsers } from "../../api/userAPI";
+import { getUsers, loginUser } from "../../api/userAPI";
 import UserList from "./UserList";
 
 export default function UserPage({ currentUser, onLogin, onLogout, onUserCreated }) {
@@ -8,13 +8,14 @@ export default function UserPage({ currentUser, onLogin, onLogout, onUserCreated
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [loginEmail, setLoginEmail] = useState('');
+    const [loginPassword, setLoginPassword] = useState('');
     const [authError, setAuthError] = useState(null);
 
     useEffect(() => {
         getUsers()
-        .then(setUsers)
-        .catch(err => setError(err.message))
-        .finally(() => setLoading(false));
+            .then(setUsers)
+            .catch(err => setError(err.message))
+            .finally(() => setLoading(false));
     }, []);
 
     const handleUserCreated = (user) => {
@@ -22,19 +23,25 @@ export default function UserPage({ currentUser, onLogin, onLogout, onUserCreated
         onUserCreated?.(user);
     };
 
-    const handleLoginSubmit = (e) => {
+    const handleLoginSubmit = async (e) => {
         e.preventDefault();
-        const normalizedEmail = loginEmail.trim().toLowerCase();
-        const user = users.find((u) => u.email?.trim().toLowerCase() === normalizedEmail);
-        if (!user) {
-            setAuthError('No user found with that email. Please register first.');
-            return;
-        }
-
-        console.log(`Logged in as ${user.name} with role ${user.role || 'normal'}`);
-        onLogin?.(user);
-        setLoginEmail('');
         setAuthError(null);
+
+        try {
+            const result = await loginUser(loginEmail.trim(), loginPassword);
+            const normalizedUser = {
+                name: result.name,
+                email: loginEmail.trim(),
+                role: result.role,
+                publicId: result.publicId,
+                id: result.publicId,
+            };
+            onLogin?.(normalizedUser);
+            setLoginEmail('');
+            setLoginPassword('');
+        } catch (loginError) {
+            setAuthError(loginError.message || 'Login failed.');
+        }
     };
 
     if (loading) return <p>Loading...</p>;
@@ -46,7 +53,7 @@ export default function UserPage({ currentUser, onLogin, onLogout, onUserCreated
                 {currentUser ? (
                     <div>
                         <p>
-                            Logged in as <strong>{currentUser.name}</strong> ({currentUser.role === 2 ? 'admin' : 'normal'})
+                            Logged in as <strong>{currentUser.name}</strong> ({String(currentUser.role).toLowerCase() === 'admin' ? 'admin' : 'customer'})
                         </p>
                         <button onClick={onLogout}>Logout</button>
                     </div>
@@ -60,6 +67,16 @@ export default function UserPage({ currentUser, onLogin, onLogout, onUserCreated
                                     type="email"
                                     value={loginEmail}
                                     onChange={(e) => setLoginEmail(e.target.value)}
+                                />
+                            </label>
+                        </div>
+                        <div>
+                            <label>
+                                Password:
+                                <input
+                                    type="password"
+                                    value={loginPassword}
+                                    onChange={(e) => setLoginPassword(e.target.value)}
                                 />
                             </label>
                         </div>

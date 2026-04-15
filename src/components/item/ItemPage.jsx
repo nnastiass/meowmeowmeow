@@ -1,51 +1,118 @@
 import { useEffect, useState } from 'react';
-import ItemForm from './itemForm';
+import ItemForm from './ItemForm';
+import { getFavourites, toggleFavourite as toggleFavouriteAPI } from '../../api/favouriteAPI';
+import { getCart, addToCart as addToCartAPI } from '../../api/cartAPI';
+import { getItems, postItem } from '../../api/itemAPI';
 
-const STORAGE_KEY = 'itemList';
+const normalizeItem = (item) => ({
+    id: item.id || item.publicId || item.PublicId || item.itemPublicId || item.ItemPublicId || null,
+    title: item.title || item.name || item.Name || item.itemName || item.ItemName || 'Untitled',
+    description: item.description || item.Description || '',
+    author: item.author || item.Author || 'admin',
+    createdAt: item.createdAt || item.CreatedAt || new Date().toISOString(),
+});
+
+const extractItemId = (item) => item?.id || item?.publicId || item?.PublicId || item?.itemPublicId || item?.ItemPublicId || null;
 
 export default function ItemPage({ currentUser }) {
     const [items, setItems] = useState([]);
     const [error, setError] = useState(null);
+    const [favouriteIds, setFavouriteIds] = useState([]);
+    const [cartItemIds, setCartItemIds] = useState([]);
 
     useEffect(() => {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-            setItems(JSON.parse(saved));
-        }
-    }, []);
-
-    useEffect(() => {
-        const handleStorage = (event) => {
-            if (event.key === STORAGE_KEY) {
-                setItems(event.newValue ? JSON.parse(event.newValue) : []);
+        const fetchItems = async () => {
+            try {
+                const fetchedItems = await getItems();
+                setItems(Array.isArray(fetchedItems) ? fetchedItems.map(normalizeItem) : []);
+            } catch (fetchError) {
+                console.error(fetchError);
+                setError('Failed to load items.');
             }
         };
 
-        window.addEventListener('storage', handleStorage);
-        return () => window.removeEventListener('storage', handleStorage);
+        fetchItems();
     }, []);
 
-    const saveItems = (nextItems) => {
-        setItems(nextItems);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(nextItems));
+    useEffect(() => {
+        const refreshLists = async () => {
+            if (!currentUser) {
+                setFavouriteIds([]);
+                setCartItemIds([]);
+                return;
+            }
+
+            try {
+                const favourites = await getFavourites();
+                setFavouriteIds(
+                    Array.isArray(favourites)
+                        ? favourites
+                              .map((item) => extractItemId(item) || item)
+                              .filter(Boolean)
+                        : []
+                );
+            } catch (fetchError) {
+                console.error(fetchError);
+            }
+
+            try {
+                const cart = await getCart();
+                setCartItemIds(
+                    Array.isArray(cart)
+                        ? cart.map((item) => extractItemId(item) || item).filter(Boolean)
+                        : []
+                );
+            } catch (fetchError) {
+                console.error(fetchError);
+            }
+        };
+
+        refreshLists();
+    }, [currentUser]);
+
+    const toggleFavourite = async (itemId) => {
+        if (!currentUser) return;
+
+        try {
+            await toggleFavouriteAPI(itemId);
+            setFavouriteIds((prev) =>
+                prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
+            );
+        } catch (fetchError) {
+            console.error(fetchError);
+            setError('Failed to update favourite.');
+        }
     };
 
-    const handleCreateItem = (itemData) => {
+    const addToCart = async (itemId) => {
+        if (!currentUser) return;
+
+        if (cartItemIds.includes(itemId)) return;
+
+        try {
+            await addToCartAPI(itemId);
+            setCartItemIds((prev) => [...prev, itemId]);
+        } catch (fetchError) {
+            console.error(fetchError);
+            setError('Failed to add item to cart.');
+        }
+    };
+
+    const handleCreateItem = async (itemData) => {
         if (!currentUser || currentUser.role !== 2) {
             setError('Only admin users can create items.');
             return;
         }
 
-        const newItem = {
-            id: Date.now().toString(),
-            title: itemData.title,
-            description: itemData.description,
-            author: currentUser.name || currentUser.email || 'admin',
-            createdAt: new Date().toISOString(),
-        };
-
-        setError(null);
-        saveItems([...items, newItem]);
+        try {
+            setError(null);
+            await postItem({ name: itemData.title, description: itemData.description });
+            const fetchedItems = await getItems();
+            setItems(Array.isArray(fetchedItems) ? fetchedItems.map(normalizeItem) : []);
+        } catch (fetchError) {
+            console.error(fetchError);
+            setError('Failed to create item.');
+        }
     };
 
     return (
@@ -73,14 +140,30 @@ export default function ItemPage({ currentUser }) {
 
             <h3>Item List</h3>
             <ul>
-                {items.map((item, index) => (
-                    <li key={item.id ?? `${item.title}-${index}`}>
-                        <strong>{item.title}</strong> — {item.description}
-                        <div style={{ fontSize: '0.9rem', color: '#555' }}>
-                            by {item.author} at {new Date(item.createdAt).toLocaleString()}
-                        </div>
-                    </li>
-                ))}
+                {items.map((item, index) => {
+                    const itemId = item.id;
+                    const isFavourited = favouriteIds.includes(itemId);
+                    const isInCart = cartItemIds.includes(itemId);
+                    return (
+                        <li key={itemId ?? `${item.title}-${index}`}>
+                            <strong>{item.title}</strong> — {item.description}
+                            {currentUser && (
+                                <div>
+                                    <button onClick={() => toggleFavourite(itemId)}>
+                                        {isFavourited ? 'Unlike' : 'Like'}
+                                    </button>
+                                    <button
+                                        onClick={() => addToCart(itemId)}
+                                        disabled={isInCart}
+                                        style={{ marginLeft: '0.5rem' }}
+                                    >
+                                        {isInCart ? 'In Cart' : 'Add to Cart'}
+                                    </button>
+                                </div>
+                            )}
+                        </li>
+                    );
+                })}
             </ul>
         </div>
     );
