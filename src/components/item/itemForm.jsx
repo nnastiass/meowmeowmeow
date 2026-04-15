@@ -1,12 +1,9 @@
 import { useState } from 'react';
 
 export default function ItemForm({ onCreate, categories = [] }) {
-    // 1. Rename title to name to match C# ItemDTO
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
-    // 2. Track the Category ID, not the name!
     const [categoryId, setCategoryId] = useState('');
-    // 3. Add state for the missing numeric properties
     const [price, setPrice] = useState('');
     const [stockQuantity, setStockQuantity] = useState('');
 
@@ -30,10 +27,7 @@ export default function ItemForm({ onCreate, categories = [] }) {
         return;
     }
 
-    // 4. Send it via the prop
     onCreate(payload);
-    
-    // Reset forms...
     setName('');
     setDescription('');
     setCategoryId('');
@@ -92,13 +86,10 @@ export default function ItemForm({ onCreate, categories = [] }) {
                     >
                         <option value="">-- Select a Category --</option>
                         {categories.map((cat, idx) => {
-                            // Safely grab the correct casing based on how your backend serializes JSON
                             const catId = cat.publicId ?? cat.PublicId;
                             const catName = cat.name ?? cat.Name;
 
                             return (
-                                // The 'value' attribute here is the crucial fix. 
-                                // It maps the dropdown selection to the ID instead of the Name.
                                 <option key={catId ?? idx} value={catId}>
                                     {catName}
                                 </option>

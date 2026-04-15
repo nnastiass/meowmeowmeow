@@ -33,3 +33,19 @@ export async function toggleFavourite(itemId) {
     }
     return await res.text();
 }
+
+// ... existing getFavourites and toggleFavourite ...
+
+export async function removeFavourite(itemId) {
+    // Notice it points to the new /remove/ route we just made in C#
+    const res = await fetch(`${API_BASE}/favourite/remove/${itemId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+    });
+    
+    if (!res.ok) {
+        throw new Error('Failed to remove favourite');
+    }
+    
+    return await res.text();
+}

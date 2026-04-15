@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react';
-import { getFavourites, toggleFavourite as toggleFavouriteAPI } from '../../api/favouriteAPI';
+import { getFavourites, removeFavourite as removeFavouriteAPI } from '../../api/favouriteAPI';
 
-// FIXED: Prioritize ItemPublicId and added ItemPrice to match the C# DTO
 const normalizeFavouriteItem = (item) => ({
-    // We strictly want the ITEM's ID for the toggle function to work
     id: item.itemPublicId || item.ItemPublicId || item.publicId || item.PublicId || null,
     title: item.itemName || item.ItemName || item.title || item.name || 'Untitled',
-    // Description doesn't exist on FavouriteDTO, but Price does!
     price: item.itemPrice || item.ItemPrice || 0, 
 });
 
@@ -38,16 +35,17 @@ export default function FavouritePage({ currentUser }) {
     }, [currentUser]);
 
     const removeFavourite = async (itemId) => {
-        if (!currentUser) return;
+    if (!currentUser) return;
 
-        try {
-            await toggleFavouriteAPI(itemId);
-            setFavourites((prev) => prev.filter((item) => item.id !== itemId));
-        } catch (fetchError) {
-            console.error(fetchError);
-            setError('Could not update favourites.');
-        }
-    };
+    try {
+        await removeFavouriteAPI(itemId);
+        
+        setFavourites((prev) => prev.filter((item) => item.id !== itemId));
+    } catch (fetchError) {
+        console.error(fetchError);
+        setError('Could not update favourites.');
+    }
+};
 
     if (!currentUser) {
         return <p>Please log in to view your favourites.</p>;
@@ -66,7 +64,6 @@ export default function FavouritePage({ currentUser }) {
                 <ul>
                     {favourites.map((item, idx) => (
                         <li key={item.id ?? `${item.title}-${idx}`}>
-                            {/* Replaced description with price to match the DTO */}
                             <strong>{item.title}</strong> — ${item.price.toFixed(2)}
                             
                             <button style={{ marginLeft: '0.5rem' }} onClick={() => removeFavourite(item.id)}>

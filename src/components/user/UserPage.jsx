@@ -46,12 +46,9 @@ export default function UserPage({ currentUser, onLogin, onLogout, onUserCreated
         }
     };
 
-    // ... top of your file remains exactly the same ...
-
     if (loading) return <p>Loading...</p>;
     if (error) return <p>Error: {error}</p>;
 
-    // 1. Create a clean variable to check if the current user is an admin
     const isAdmin = currentUser?.role === 2 || String(currentUser?.role).toLowerCase() === 'admin';
 
     return (
@@ -65,7 +62,6 @@ export default function UserPage({ currentUser, onLogin, onLogout, onUserCreated
                         <button onClick={onLogout}>Logout</button>
                     </div>
                 ) : (
-                    // ... login form remains exactly the same ...
                     <form onSubmit={handleLoginSubmit} style={{ marginBottom: '1rem' }}>
                         <h2>Login</h2>
                         <div>
@@ -94,7 +90,6 @@ export default function UserPage({ currentUser, onLogin, onLogout, onUserCreated
                 )}
             </div>
 
-            {/* 2. ONLY render this entire section if the user is an admin */}
             {isAdmin && (
                 <>
                     <h2>Users</h2>
