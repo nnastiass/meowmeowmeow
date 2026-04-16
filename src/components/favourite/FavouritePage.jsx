@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getFavourites, removeFavourite as removeFavouriteAPI } from '../../api/favouriteAPI';
 
+import { getFavourites, removeFavourite as removeFavouriteAPI } from '../../api/favouriteAPI';
 const normalizeFavouriteItem = (item) => ({
     id: item.itemPublicId || item.ItemPublicId || item.publicId || item.PublicId || null,
     title: item.itemName || item.ItemName || item.title || item.name || 'Untitled',
@@ -48,7 +48,7 @@ export default function FavouritePage({ currentUser }) {
 };
 
     if (!currentUser) {
-        return <p>Please log in to view your favourites.</p>;
+        return <p>Who are you</p>;
     }
 
     return (

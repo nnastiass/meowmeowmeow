@@ -2,9 +2,7 @@ import { useEffect, useState } from 'react';
 import { getCart, removeFromCart as removeFromCartAPI } from '../../api/cartAPI';
 import { createOrder as createOrderAPI } from '../../api/orderAPI';
 
-// 1. Add a normalizer to map the C# DTO properties to your React UI
 const normalizeCartItem = (item) => ({
-    // Use the Item's ID so your remove function knows which item to target
     id: item.itemPublicId || item.ItemPublicId || item.publicId || item.PublicId || null,
     title: item.itemName || item.ItemName || 'Untitled',
     price: item.itemPrice || item.ItemPrice || 0,
@@ -13,7 +11,7 @@ const normalizeCartItem = (item) => ({
 
 export default function CartPage({ currentUser }) {
     const [cartItems, setCartItems] = useState([]);
-    const [cartTotal, setCartTotal] = useState(0); // Optional: Let's track the total too!
+    const [cartTotal, setCartTotal] = useState(0);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
 
@@ -28,7 +26,6 @@ export default function CartPage({ currentUser }) {
             try {
                 const cartData = await getCart();
                 
-                // 2. FIXED: Check if cartData.items is an array, since the backend returns { items, total }
                 if (cartData && Array.isArray(cartData.items)) {
                     setCartItems(cartData.items.map(normalizeCartItem));
                     setCartTotal(cartData.total || 0);
@@ -93,7 +90,6 @@ export default function CartPage({ currentUser }) {
                     <ul>
                         {cartItems.map((item, index) => (
                             <li key={item.id ?? index} style={{ marginBottom: '1rem' }}>
-                                {/* 3. FIXED: Display properties that actually exist on the C# DTO */}
                                 <strong>{item.title}</strong> — ${item.price.toFixed(2)}
                                 <div style={{ fontSize: '0.9rem', color: '#555' }}>
                                     Quantity: {item.quantity}

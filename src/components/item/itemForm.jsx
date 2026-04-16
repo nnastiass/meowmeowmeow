@@ -84,7 +84,7 @@ export default function ItemForm({ onCreate, categories = [] }) {
                         value={categoryId}
                         onChange={(e) => setCategoryId(e.target.value)}
                     >
-                        <option value="">-- Select a Category --</option>
+                        <option value="">Select a Category</option>
                         {categories.map((cat, idx) => {
                             const catId = cat.publicId ?? cat.PublicId;
                             const catName = cat.name ?? cat.Name;

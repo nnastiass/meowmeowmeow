@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
 import ItemForm from './ItemForm';
 import CategoryForm from './CategoryForm';
-import { getFavourites, toggleFavourite as toggleFavouriteAPI } from '../../api/favouriteAPI';
+import { 
+    getFavourites, 
+    toggleFavourite as toggleFavouriteAPI, 
+    removeFavourite as removeFavouriteAPI 
+} from '../../api/favouriteAPI';
 import { getCart, addToCart as addToCartAPI } from '../../api/cartAPI';
 import { getItems, postItem } from '../../api/itemAPI';
 import { getCategories, createCategory as createCategoryAPI, deleteCategory as deleteCategoryAPI } from '../../api/categoryAPI';
 
-// 1. UPDATED: Added categoryId so we can filter by it
+
 const normalizeItem = (item) => ({
     id: item.id || item.publicId || item.PublicId || item.itemPublicId || item.ItemPublicId || null,
     title: item.title || item.name || item.Name || item.itemName || item.ItemName || 'Untitled',
@@ -15,8 +19,7 @@ const normalizeItem = (item) => ({
     createdAt: item.createdAt || item.CreatedAt || new Date().toISOString(),
     categoryId: item.categoryId || item.CategoryId || null, 
 });
-
-const extractItemId = (item) => item?.id || item?.publicId || item?.PublicId || item?.itemPublicId || item?.ItemPublicId || null;
+const extractItemId = (item) => item?.itemPublicId || item?.ItemPublicId || item?.id || item?.publicId || item?.PublicId || null;
 
 export default function ItemPage({ currentUser }) {
     const [items, setItems] = useState([]);
@@ -25,7 +28,6 @@ export default function ItemPage({ currentUser }) {
     const [favouriteIds, setFavouriteIds] = useState([]);
     const [cartItemIds, setCartItemIds] = useState([]);
 
-    // 2. NEW: State for Search and Filter
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategoryId, setFilterCategoryId] = useState('');
 
@@ -79,10 +81,10 @@ export default function ItemPage({ currentUser }) {
             }
 
             try {
-                const cart = await getCart();
+                const cartData = await getCart();
                 setCartItemIds(
-                    Array.isArray(cart)
-                        ? cart.map((item) => extractItemId(item) || item).filter(Boolean)
+                    cartData && Array.isArray(cartData.items)
+                        ? cartData.items.map((item) => extractItemId(item) || item).filter(Boolean)
                         : []
                 );
             } catch (fetchError) {
@@ -94,21 +96,25 @@ export default function ItemPage({ currentUser }) {
     }, [currentUser]);
 
     const toggleFavourite = async (itemId) => {
-        if (!currentUser) return;
-        try {
+    if (!currentUser) return;
+    const isCurrentlyFavourited = favouriteIds.includes(itemId);
+
+    try {
+        if (isCurrentlyFavourited) {
+            await removeFavouriteAPI(itemId);
+            setFavouriteIds((prev) => prev.filter((id) => id !== itemId));
+        } else {
             await toggleFavouriteAPI(itemId);
-            setFavouriteIds((prev) =>
-                prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
-            );
-        } catch (fetchError) {
-            console.error(fetchError);
-            setError('Failed to update favourite.');
+            setFavouriteIds((prev) => [...prev, itemId]);
         }
-    };
+    } catch (fetchError) {
+        console.error(fetchError);
+        setError('Failed to update favourite.');
+    }
+};
 
     const addToCart = async (itemId) => {
         if (!currentUser) return;
-        if (cartItemIds.includes(itemId)) return;
         try {
             await addToCartAPI(itemId);
             setCartItemIds((prev) => [...prev, itemId]);
@@ -157,7 +163,6 @@ export default function ItemPage({ currentUser }) {
         }
     };
 
-    // 3. NEW: Compute the filtered items before rendering
     const filteredItems = items.filter(item => {
         const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory = filterCategoryId ? item.categoryId === filterCategoryId : true;
@@ -177,7 +182,6 @@ export default function ItemPage({ currentUser }) {
 
             {(currentUser?.role === 2 || currentUser?.role?.toLowerCase?.() === 'admin') ? (
                 <div>
-                    {/* ... (Admin Manage Categories & Create Item sections remain exactly the same) ... */}
                     <h3>Manage Categories</h3>
                     <CategoryForm onCreate={handleCreateCategory} />
                     {categories.length > 0 && (
@@ -210,8 +214,6 @@ export default function ItemPage({ currentUser }) {
             )}
 
             <h3>Item List</h3>
-
-            {/* NEW: Search and Filter Controls UI */}
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
                 <input 
                     type="text" 
@@ -239,7 +241,6 @@ export default function ItemPage({ currentUser }) {
                 </select>
             </div>
 
-            {/* UPDATED: Map over filteredItems instead of items */}
             {filteredItems.length === 0 ? (
                 <p>No items found matching your criteria.</p>
             ) : (
@@ -256,12 +257,12 @@ export default function ItemPage({ currentUser }) {
                                         <button onClick={() => toggleFavourite(itemId)}>
                                             {isFavourited ? 'Unlike' : 'Like'}
                                         </button>
+                                       
                                         <button
                                             onClick={() => addToCart(itemId)}
-                                            disabled={isInCart}
                                             style={{ marginLeft: '0.5rem' }}
                                         >
-                                            {isInCart ? 'In Cart' : 'Add to Cart'}
+                                            {isInCart ? 'Add Another to Cart' : 'Add to Cart'}
                                         </button>
                                     </div>
                                 )}

@@ -20,8 +20,6 @@ export async function addToCart(itemId) {
     if (!res.ok) {
         throw new Error('Failed to add item to cart');
     }
-    
-    // Using res.json() here because your C# Add method returns Ok(result) which is a JSON object!
     return await res.json(); 
 }
 
