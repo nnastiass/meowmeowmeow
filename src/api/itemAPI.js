@@ -24,3 +24,16 @@ export async function postItem(itemData) {
     }
     return await res.json();
 }
+
+export async function deleteItem(itemId) {
+    const res = await fetch(`${API_BASE}/item/${itemId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+    });
+    
+    if (!res.ok) {
+        throw new Error('Failed to delete item');
+    }
+
+    return await res.text(); 
+}

@@ -7,7 +7,7 @@ import {
     removeFavourite as removeFavouriteAPI 
 } from '../../api/favouriteAPI';
 import { getCart, addToCart as addToCartAPI } from '../../api/cartAPI';
-import { getItems, postItem } from '../../api/itemAPI';
+import { getItems, postItem, deleteItem } from '../../api/itemAPI';
 import { getCategories, createCategory as createCategoryAPI, deleteCategory as deleteCategoryAPI } from '../../api/categoryAPI';
 
 
@@ -96,22 +96,22 @@ export default function ItemPage({ currentUser }) {
     }, [currentUser]);
 
     const toggleFavourite = async (itemId) => {
-    if (!currentUser) return;
-    const isCurrentlyFavourited = favouriteIds.includes(itemId);
+        if (!currentUser) return;
+        const isCurrentlyFavourited = favouriteIds.includes(itemId);
 
-    try {
-        if (isCurrentlyFavourited) {
-            await removeFavouriteAPI(itemId);
-            setFavouriteIds((prev) => prev.filter((id) => id !== itemId));
-        } else {
-            await toggleFavouriteAPI(itemId);
-            setFavouriteIds((prev) => [...prev, itemId]);
+        try {
+            if (isCurrentlyFavourited) {
+                await removeFavouriteAPI(itemId);
+                setFavouriteIds((prev) => prev.filter((id) => id !== itemId));
+            } else {
+                await toggleFavouriteAPI(itemId);
+                setFavouriteIds((prev) => [...prev, itemId]);
+            }
+        } catch (fetchError) {
+            console.error(fetchError);
+            setError('Failed to update favourite.');
         }
-    } catch (fetchError) {
-        console.error(fetchError);
-        setError('Failed to update favourite.');
-    }
-};
+    };
 
     const addToCart = async (itemId) => {
         if (!currentUser) return;
@@ -163,6 +163,27 @@ export default function ItemPage({ currentUser }) {
         }
     };
 
+    const handleDeleteItem = async (itemId) => {
+        // Extra security: Make sure only Admins can trigger this from the UI
+        if (!currentUser || (currentUser.role !== 2 && currentUser.role?.toLowerCase() !== 'admin')) {
+            setError('Only admin users can delete items.');
+            return;
+        }
+
+        if (!window.confirm("Are you sure you want to permanently delete this item?")) {
+            return; 
+        }
+
+        try {
+            await deleteItem(itemId);
+            // Remove it from the React state so it vanishes from the screen immediately
+            setItems((prev) => prev.filter((item) => item.id !== itemId));
+        } catch (fetchError) {
+            console.error(fetchError);
+            setError('Failed to delete item.');
+        }
+    };
+
     const filteredItems = items.filter(item => {
         const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory = filterCategoryId ? item.categoryId === filterCategoryId : true;
@@ -188,6 +209,7 @@ export default function ItemPage({ currentUser }) {
                         <div>
                             <h4>Existing Categories</h4>
                             <ul>
+                                {/* FIXED: Restored the proper Category mapping code here */}
                                 {categories.map((cat, idx) => (
                                     <li key={cat.publicId ?? cat.PublicId ?? idx}>
                                         <strong>{cat.name ?? cat.Name}</strong> — {cat.description ?? cat.Description}
@@ -253,17 +275,28 @@ export default function ItemPage({ currentUser }) {
                             <li key={itemId ?? `${item.title}-${index}`}>
                                 <strong>{item.title}</strong> — {item.description}
                                 {currentUser && (
-                                    <div>
-                                        <button onClick={() => toggleFavourite(itemId)}>
-                                            {isFavourited ? 'Unlike' : 'Like'}
-                                        </button>
-                                       
+                                    <div style={{ marginTop: '0.5rem' }}>
+                                        {!isFavourited && (
+                                            <button onClick={() => toggleFavourite(itemId)}>
+                                                Like
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => addToCart(itemId)}
                                             style={{ marginLeft: '0.5rem' }}
                                         >
                                             {isInCart ? 'Add Another to Cart' : 'Add to Cart'}
                                         </button>
+
+                                        {/* FIXED: The Delete Item button is now correctly placed here! */}
+                                        {(currentUser.role === 2 || currentUser.role?.toLowerCase() === 'admin') && (
+                                            <button 
+                                                onClick={() => handleDeleteItem(itemId)}
+                                                style={{ marginLeft: '1rem', backgroundColor: '#ff4d4d', color: 'white', border: 'none', padding: '2px 8px', borderRadius: '4px' }}
+                                            >
+                                                Delete Item
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </li>
