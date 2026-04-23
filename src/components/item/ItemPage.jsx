@@ -31,6 +31,8 @@ export default function ItemPage({ currentUser }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategoryId, setFilterCategoryId] = useState('');
 
+    const isAdmin = currentUser && (currentUser.role === 2 || (typeof currentUser.role === 'string' && currentUser.role.toLowerCase() === 'admin'));
+
     useEffect(() => {
         console.log('Current user:', currentUser);
     }, [currentUser]);
@@ -125,7 +127,7 @@ export default function ItemPage({ currentUser }) {
     };
 
     const handleCreateItem = async (itemData) => {
-        if (!currentUser || (currentUser.role !== 2 && currentUser.role?.toLowerCase() !== 'admin')) {
+        if (!isAdmin) {
             setError('Only admin users can create items.');
             return;
         }
@@ -164,8 +166,8 @@ export default function ItemPage({ currentUser }) {
     };
 
     const handleDeleteItem = async (itemId) => {
-        // Extra security: Make sure only Admins can trigger this from the UI
-        if (!currentUser || (currentUser.role !== 2 && currentUser.role?.toLowerCase() !== 'admin')) {
+
+        if (!isAdmin) {
             setError('Only admin users can delete items.');
             return;
         }
@@ -176,7 +178,6 @@ export default function ItemPage({ currentUser }) {
 
         try {
             await deleteItem(itemId);
-            // Remove it from the React state so it vanishes from the screen immediately
             setItems((prev) => prev.filter((item) => item.id !== itemId));
         } catch (fetchError) {
             console.error(fetchError);
@@ -185,7 +186,9 @@ export default function ItemPage({ currentUser }) {
     };
 
     const filteredItems = items.filter(item => {
-        const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
+        const itemTitle = typeof item.title === 'string' ? item.title.toLowerCase() : '';
+        const query = typeof searchQuery === 'string' ? searchQuery.toLowerCase() : '';
+        const matchesSearch = itemTitle.includes(query);
         const matchesCategory = filterCategoryId ? item.categoryId === filterCategoryId : true;
         return matchesSearch && matchesCategory;
     });
@@ -195,13 +198,13 @@ export default function ItemPage({ currentUser }) {
             <h2>Items</h2>
             {currentUser ? (
                 <p>
-                    Logged in as <strong>{currentUser.name}</strong> ({currentUser.role === 2 || currentUser.role?.toLowerCase?.() === 'admin' ? 'admin' : 'normal'})
+                    Logged in as <strong>{currentUser.name}</strong> ({isAdmin ? 'admin' : 'normal'})
                 </p>
             ) : (
                 <p>Please log in to see item creation controls.</p>
             )}
 
-            {(currentUser?.role === 2 || currentUser?.role?.toLowerCase?.() === 'admin') ? (
+            {(isAdmin) ? (
                 <div>
                     <h3>Manage Categories</h3>
                     <CategoryForm onCreate={handleCreateCategory} />
@@ -209,7 +212,6 @@ export default function ItemPage({ currentUser }) {
                         <div>
                             <h4>Existing Categories</h4>
                             <ul>
-                                {/* FIXED: Restored the proper Category mapping code here */}
                                 {categories.map((cat, idx) => (
                                     <li key={cat.publicId ?? cat.PublicId ?? idx}>
                                         <strong>{cat.name ?? cat.Name}</strong> — {cat.description ?? cat.Description}
@@ -287,9 +289,7 @@ export default function ItemPage({ currentUser }) {
                                         >
                                             {isInCart ? 'Add Another to Cart' : 'Add to Cart'}
                                         </button>
-
-                                        {/* FIXED: The Delete Item button is now correctly placed here! */}
-                                        {(currentUser.role === 2 || currentUser.role?.toLowerCase() === 'admin') && (
+                                        {(isAdmin) && (
                                             <button 
                                                 onClick={() => handleDeleteItem(itemId)}
                                                 style={{ marginLeft: '1rem', backgroundColor: '#ff4d4d', color: 'white', border: 'none', padding: '2px 8px', borderRadius: '4px' }}

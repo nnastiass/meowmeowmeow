@@ -26,7 +26,7 @@ export default function OrderPage({ currentUser }) {
     }, [currentUser, isAdmin]);
 
     if (!currentUser) {
-        return <p>Please log in to view orders.</p>;
+        return <p>Who are you</p>;
     }
 
     return (

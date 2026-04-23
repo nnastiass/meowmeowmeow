@@ -73,7 +73,7 @@ export default function CartPage({ currentUser }) {
     };
 
     if (!currentUser) {
-        return <p>Please log in to view your cart.</p>;
+        return <p>Who are you</p>;
     }
 
     return (
